@@ -1,6 +1,6 @@
 package by.honchar.hserver.http;
 
-import by.honchar.hserver.io.PropertiesLoader;
+import by.honchar.hserver.io.ClassPathFileLoader;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
@@ -12,41 +12,22 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class HServer {
 
-    private final static String SERVER_PROPERTIES_FILE = "/server.properties";
+    private final static String SERVER_PROPERTIES_FILE = "server.properties";
     private final static String SERVER_PORT_PROPERTY = "server.port";
     private final static int DEFAULT_SERVER_PORT = 8080;
     private final static Logger logger = Logger.getLogger(HServer.class);
-
-//    private final static AtomicReference<HServer> serverReference = new AtomicReference<>();
-    private volatile boolean isInterrupted = false;
 
 
     public HServer(){
     }
 
-//    public static HServer getInstance() {
-//        HServer instance = serverReference.get();
-//        if(instance == null) {
-//            synchronized (HServer.class) {
-//                instance = serverReference.get();
-//                if(instance == null) {
-//                    instance = new HServer();
-//                    serverReference.set(instance);
-//                }
-//            }
-//        }
-//        return instance;
-//
-//    }
-
     private int getServerPort() {
         int serverPort = DEFAULT_SERVER_PORT;
         try {
-            Properties properties = PropertiesLoader.loadProperties(SERVER_PROPERTIES_FILE);
+            Properties properties = ClassPathFileLoader.loadProperties(SERVER_PROPERTIES_FILE);
             String serverPortProp = properties.getProperty(SERVER_PORT_PROPERTY);
             serverPort = NumberUtils.toInt(serverPortProp, DEFAULT_SERVER_PORT);
         } catch (IOException ex) {
@@ -61,7 +42,7 @@ public class HServer {
         ExecutorService threadPool = new ThreadPoolExecutor(
                 4, 64, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(256));
         try(ServerSocket socketListener = new ServerSocket(serverPort, 256)) {
-            while(!isInterrupted){
+            while(!Thread.interrupted()){
                 final Socket socket = socketListener.accept();
                 threadPool.submit(new RequestProcessor(socket));
             }
@@ -71,7 +52,7 @@ public class HServer {
     }
 
     public void doStop() {
-        this.isInterrupted = true;
+        Thread.currentThread().interrupt();
     }
 
 }

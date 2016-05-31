@@ -4,14 +4,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class PropertiesLoader {
+public class ClassPathFileLoader {
 
     public static Properties loadProperties(final String filePath) throws IOException {
         final Properties properties = new Properties();
-        try (final InputStream is = PropertiesLoader.class.getResourceAsStream(filePath)) {
+        try (final InputStream is = ClassPathFileLoader.loadFileInputStream(filePath)) {
             properties.load(is);
         }
         return properties;
+    }
+
+    public static InputStream  loadFileInputStream(final String filePath) throws IOException {
+        return ClassPathFileLoader.class.getClassLoader().getResourceAsStream(filePath);
     }
 
 }
